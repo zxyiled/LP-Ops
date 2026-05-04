@@ -1,0 +1,15 @@
+# --- main framework ---
+fastapi==0.136.1
+uvicorn==0.46.0
+ 
+# --- data validation ---
+pydantic==2.11.4
+ 
+# --- linear optimization engine ---
+PuLP==3.3.0
+ 
+# --- CORS for communication with the React frontend ---
+starlette==0.46.2
+ 
+# --- utils ---
+python-dotenv==1.1.0
