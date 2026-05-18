@@ -13,4 +13,73 @@ The program allows you to:
 ## 🛠️ Technology Stack
 
 * **Backend:** FastAPI, PuLP, Pydantic.
-* **Frontend:** React, Vite, TypeScript.
+* **Frontend:** React, Vite, JavaScript.
+
+## 📁 Project Structure
+
+```
+backend/
+├── routers/
+│   └── solver.py          # API endpoint for solving LP problems
+├── schemas/
+│   └── problem.py          # Pydantic models for request/response validation
+├── services/
+│   ├── recommendations.py  # Recommendation engine for solution analysis
+│   └── solver_service.py   # PuLP/CBC solver logic
+└── main.py                 # FastAPI entry point with CORS configuration
+
+frontend/
+├── src/
+│   ├── components/
+│   │   ├── ProblemForm.jsx        # Dynamic form for N variables & M constraints
+│   │   ├── RecommendationCard.jsx # Individual recommendation card
+│   │   └── ResultDashboard.jsx    # Solution metrics, tables, and recommendations
+│   ├── services/
+│   │   └── api.ts                 # HTTP client for the solver API
+│   ├── styles/
+│   │   └── main.css               # Application stylesheet (glassmorphism design)
+│   ├── App.jsx                    # Main app shell with state management
+│   └── main.jsx                   # React entry point
+├── index.html
+├── vite.config.js
+├── tsconfig.json
+└── package.json
+```
+
+## 🏗️ Architecture
+
+```
+User → ProblemForm.jsx → api.ts → POST /api/solver/solve → FastAPI → SolverService (PuLP/CBC) → SolveResponse → ResultDashboard
+```
+
+## 🧮 How to Use
+
+1. **Start the backend:**
+   ```bash
+   cd backend
+   pip install -r requirements.txt
+   uvicorn backend.main:app --reload --port 8000
+   ```
+
+2. **Start the frontend:**
+   ```bash
+   cd frontend
+   npm install
+   npm run dev
+   ```
+
+3. Open **http://localhost:5173** in your browser.
+
+4. Define your variables, objective function, and constraints, then click **"Resolver con PuLP"**.
+
+## 📋 Example Problem
+
+**Maximize:** $Z = 40x_1 + 90x_2 + 150x_3$
+
+**Subject to:**
+- $2x_1 + 5x_2 + 8x_3 \leq 400$ (Wood)
+- $3x_1 + 4x_2 + 10x_3 \leq 500$ (Labor hours)
+- $x_1 + 3x_2 + 6x_3 \leq 250$ (Storage space)
+- $x_1, x_2, x_3 \geq 0$
+
+**Optimal solution (integer variables):** $Z = \\$7,710$
