@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Dict
+from typing import Dict, cast
 
 import pulp
 
@@ -76,7 +76,7 @@ class SolverService:
         objective_value = None
 
         if is_optimal:
-            objective_value = float(pulp.value(model.objective))
+            objective_value = float(cast(float, pulp.value(model.objective)))
             variable_results = self._build_variable_results(request, pulp_variables)
             constraint_results = self._build_constraint_results(request, model)
 
