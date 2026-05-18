@@ -1,4 +1,8 @@
+const makeId = (prefix) =>
+  `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
 const makeVariable = (index) => ({
+  id: makeId("variable"),
   name: `x${index}`,
   lower_bound: 0,
   upper_bound: "",
@@ -6,6 +10,7 @@ const makeVariable = (index) => ({
 });
 
 const makeConstraint = (index, variables) => ({
+  id: makeId("constraint"),
   name: `R${index}`,
   coefficients: Object.fromEntries(
     variables.map((variable) => [variable.name, 0]),
@@ -190,18 +195,21 @@ export default function ProblemForm({
       },
       constraints: [
         {
+          id: makeId("constraint"),
           name: "Materia prima",
           coefficients: { x: 3, y: 2 },
           operator: "<=",
           rhs: 100,
         },
         {
+          id: makeId("constraint"),
           name: "Horas máquina",
           coefficients: { x: 2, y: 3 },
           operator: "<=",
           rhs: 90,
         },
         {
+          id: makeId("constraint"),
           name: "Demanda mínima",
           coefficients: { x: 1, y: 1 },
           operator: ">=",
@@ -318,7 +326,7 @@ export default function ProblemForm({
             </thead>
             <tbody>
               {problem.variables.map((variable, index) => (
-                <tr key={`${variable.name}-${index}`}>
+                <tr key={variable.id ?? index}>
                   <td>
                     <input
                       value={variable.name}
@@ -417,7 +425,7 @@ export default function ProblemForm({
 
         <div className="coefficient-grid">
           {problem.variables.map((variable) => (
-            <label key={variable.name}>
+            <label key={variable.id ?? variable.name}>
               Coef. {variable.name}
               <input
                 type="number"
@@ -453,7 +461,9 @@ export default function ProblemForm({
               <tr>
                 <th>Nombre</th>
                 {problem.variables.map((variable) => (
-                  <th key={variable.name}>{variable.name}</th>
+                  <th key={variable.id ?? variable.name}>
+                    {variable.name || "Variable"}
+                  </th>
                 ))}
                 <th>Operador</th>
                 <th>Límite</th>
@@ -462,7 +472,7 @@ export default function ProblemForm({
             </thead>
             <tbody>
               {problem.constraints.map((constraint, constraintIndex) => (
-                <tr key={`${constraint.name}-${constraintIndex}`}>
+                <tr key={constraint.id ?? constraintIndex}>
                   <td>
                     <input
                       value={constraint.name}
@@ -476,7 +486,7 @@ export default function ProblemForm({
                     />
                   </td>
                   {problem.variables.map((variable) => (
-                    <td key={variable.name}>
+                    <td key={variable.id ?? variable.name}>
                       <input
                         type="number"
                         step="any"
