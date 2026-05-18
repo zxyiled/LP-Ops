@@ -7,15 +7,33 @@ const initialProblem = {
   title: "Modelo de programación lineal",
   context: "",
   variables: [
-    { name: "x1", lower_bound: 0, upper_bound: "", category: "continuous" },
-    { name: "x2", lower_bound: 0, upper_bound: "", category: "continuous" },
+    {
+      id: "variable-initial-1",
+      name: "x1",
+      lower_bound: 0,
+      upper_bound: "",
+      category: "continuous",
+    },
+    {
+      id: "variable-initial-2",
+      name: "x2",
+      lower_bound: 0,
+      upper_bound: "",
+      category: "continuous",
+    },
   ],
   objective: {
     sense: "maximize",
     coefficients: { x1: 0, x2: 0 },
   },
   constraints: [
-    { name: "R1", coefficients: { x1: 0, x2: 0 }, operator: "<=", rhs: 0 },
+    {
+      id: "constraint-initial-1",
+      name: "R1",
+      coefficients: { x1: 0, x2: 0 },
+      operator: "<=",
+      rhs: 0,
+    },
   ],
 };
 
