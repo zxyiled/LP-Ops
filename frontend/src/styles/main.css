@@ -133,7 +133,7 @@ button:disabled {
 
 .workspace {
     display: grid;
-    grid-template-columns: minmax(430px, 0.92fr) minmax(0, 1.08fr);
+    grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
     gap: 24px;
     align-items: start;
 }
@@ -141,6 +141,7 @@ button:disabled {
 .builder-panel,
 .results-panel {
     min-width: 0;
+    overflow: hidden;
 }
 
 .problem-form,
@@ -156,6 +157,12 @@ button:disabled {
 .empty-state {
     border-radius: 24px;
     padding: 22px;
+}
+
+.form-card,
+.table-card,
+.recommendations-section {
+    overflow: hidden;
 }
 
 .section-heading {
@@ -267,6 +274,15 @@ textarea:focus {
     overflow-x: auto;
 }
 
+.table-wrapper.editable {
+    max-height: 320px;
+    overflow: auto;
+}
+
+.constraints-table {
+    max-height: 420px;
+}
+
 table {
     width: 100%;
     border-collapse: separate;
@@ -352,7 +368,7 @@ td {
 
 .empty-state {
     display: grid;
-    min-height: 420px;
+    min-height: 280px;
     place-items: center;
     text-align: center;
 }
@@ -490,10 +506,10 @@ td {
     line-height: 1.6;
 }
 
-@media (max-width: 1180px) {
+@media (max-width: 1280px) {
     .hero,
     .workspace {
-        grid-template-columns: 1fr;
+        grid-template-columns: minmax(0, 1fr);
     }
 
     .dashboard-grid {
