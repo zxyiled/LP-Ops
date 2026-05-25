@@ -1,6 +1,8 @@
+// API base URL, configurable via environment variable
 const API_BASE_URL =
   import.meta.env.VITE_API_URL ?? "http://localhost:8000/api";
 
+// --- Payload types sent to the backend ---
 export type SolvePayload = {
   title: string;
   context?: string;
@@ -22,6 +24,7 @@ export type SolvePayload = {
   }>;
 };
 
+// --- Response type returned by the backend ---
 export type SolveResponse = {
   status: string;
   status_label: string;
@@ -50,6 +53,7 @@ export type SolveResponse = {
   }>;
 };
 
+// --- Sends the problem to the backend and returns the solution ---
 export async function solveLinearProblem(
   payload: SolvePayload,
 ): Promise<SolveResponse> {
@@ -61,6 +65,7 @@ export async function solveLinearProblem(
     body: JSON.stringify(payload),
   });
 
+  // Error handling: extracts the backend message when possible
   if (!response.ok) {
     let message = "No se pudo resolver el modelo.";
     try {

@@ -12,6 +12,7 @@ from backend.schemas.problem import (
 )
 from backend.services.recommendations import build_recommendations
 
+# PuLP status to Spanish labels for the UI
 PULP_STATUS_LABELS: Dict[str, str] = {
     "Optimal": "Óptima",
     "Infeasible": "Infactible",
@@ -22,9 +23,10 @@ PULP_STATUS_LABELS: Dict[str, str] = {
 
 
 class SolverService:
-    """Builds and solves linear programming models using PuLP/CBC."""
+    """Builds and solves LP models using PuLP/CBC."""
 
     def solve(self, request: LinearProblemRequest) -> SolveResponse:
+        # 1. Create the PuLP problem with the optimization sense
         sense = (
             pulp.LpMaximize
             if request.objective.sense == "maximize"
@@ -32,9 +34,11 @@ class SolverService:
         )
         model = pulp.LpProblem(request.title, sense)
 
+        # 2. Create decision variables with type and bounds
         pulp_variables = {}
         for variable in request.variables:
             category = self._map_category(variable.category)
+            # Binary variables force bounds to [0, 1]
             lower_bound = 0 if variable.category == "binary" else variable.lower_bound
             upper_bound = 1 if variable.category == "binary" else variable.upper_bound
             pulp_variables[variable.name] = pulp.LpVariable(
@@ -44,6 +48,7 @@ class SolverService:
                 cat=category,
             )
 
+        # 3. Build the objective function using lpSum
         objective_expression = pulp.lpSum(
             request.objective.coefficients.get(variable.name, 0.0)
             * pulp_variables[variable.name]
@@ -51,6 +56,7 @@ class SolverService:
         )
         model += objective_expression, "Función objetivo"
 
+        # 4. Add each constraint to the model
         for constraint in request.constraints:
             expression = pulp.lpSum(
                 constraint.coefficients.get(variable.name, 0.0)
@@ -64,9 +70,11 @@ class SolverService:
             else:
                 model += expression == constraint.rhs, constraint.name
 
+        # 5. Solve with the CBC solver (no console output)
         solver = pulp.PULP_CBC_CMD(msg=False)
         model.solve(solver)
 
+        # 6. Interpret the solution status
         status = pulp.LpStatus.get(model.status, "Undefined")
         status_label = PULP_STATUS_LABELS.get(status, status)
         is_optimal = status == "Optimal"
@@ -75,11 +83,13 @@ class SolverService:
         constraint_results: list[ConstraintResult] = []
         objective_value = None
 
+        # 7. Only extract results if the solution is optimal
         if is_optimal:
             objective_value = float(cast(float, pulp.value(model.objective)))
             variable_results = self._build_variable_results(request, pulp_variables)
             constraint_results = self._build_constraint_results(request, model)
 
+        # 8. Generate interpretation text and recommendations
         interpretation = self._build_interpretation(
             request, status_label, objective_value, variable_results
         )
@@ -102,6 +112,7 @@ class SolverService:
             recommendations=recommendations,
         )
 
+    # Maps UI category string to PuLP category constant
     @staticmethod
     def _map_category(category: str) -> str:
         if category == "integer":
@@ -110,6 +121,7 @@ class SolverService:
             return pulp.LpBinary
         return pulp.LpContinuous
 
+    # Extracts optimal values and contribution to Z for each variable
     @staticmethod
     def _build_variable_results(
         request: LinearProblemRequest, pulp_variables: dict
@@ -128,6 +140,7 @@ class SolverService:
             )
         return results
 
+    # Computes activity, slack, binding status and shadow price per constraint
     @staticmethod
     def _build_constraint_results(
         request: LinearProblemRequest, model: pulp.LpProblem
@@ -140,6 +153,7 @@ class SolverService:
                 for variable in request.variables
             )
 
+            # Slack depends on the operator direction
             if constraint.operator == "<=":
                 slack = constraint.rhs - activity
             elif constraint.operator == ">=":
@@ -147,6 +161,7 @@ class SolverService:
             else:
                 slack = abs(activity - constraint.rhs)
 
+            # Shadow price (dual) accessed from PuLP's constraint object
             pulp_constraint = model.constraints.get(constraint.name)
             shadow_price = (
                 getattr(pulp_constraint, "pi", None)
@@ -161,12 +176,13 @@ class SolverService:
                     rhs=constraint.rhs,
                     activity=activity,
                     slack=slack,
-                    is_binding=abs(slack) <= 1e-6,
+                    is_binding=abs(slack) <= 1e-6,  # Numerical tolerance
                     shadow_price=None if shadow_price is None else float(shadow_price),
                 )
             )
         return results
 
+    # Generates an explanatory text about the result for the user
     @staticmethod
     def _build_interpretation(
         request: LinearProblemRequest,

@@ -8,6 +8,9 @@ from backend.schemas.problem import (
 )
 
 
+# --- Deterministic recommendation engine ---
+# Analyzes the solution and generates up to 5 insight cards
+# useful for decision-making.
 def build_recommendations(
     problem: LinearProblemRequest,
     status: str,
@@ -15,11 +18,10 @@ def build_recommendations(
     variables: list[VariableResult],
     constraints: list[ConstraintResult],
 ) -> list[Recommendation]:
-    """Generate deterministic, explainable recommendations for academic LP analysis."""
-
     if status != "Optimal":
         return _recommend_for_non_optimal_status(status)
 
+    # Always show the optimal value achieved
     recommendations: list[Recommendation] = [
         Recommendation(
             title="Solución óptima encontrada",
@@ -31,6 +33,7 @@ def build_recommendations(
         )
     ]
 
+    # Identify the variable that contributes most to the objective
     positive_variables = [item for item in variables if abs(item.value) > 1e-6]
     if positive_variables:
         highest_impact = max(
@@ -48,6 +51,7 @@ def build_recommendations(
             )
         )
     else:
+        # All variables at zero may indicate a formulation issue
         recommendations.append(
             Recommendation(
                 title="Variables en cero",
@@ -59,6 +63,7 @@ def build_recommendations(
             )
         )
 
+    # Binding constraints: the ones that limit the solution
     binding_constraints = [
         constraint for constraint in constraints if constraint.is_binding
     ]
@@ -86,6 +91,7 @@ def build_recommendations(
             )
         )
 
+    # Resource with the largest slack (most leftover)
     largest_slack = max(
         constraints, key=lambda constraint: constraint.slack, default=None
     )
@@ -101,6 +107,7 @@ def build_recommendations(
             )
         )
 
+    # If the user provided context, suggest a contextual interpretation
     if problem.context:
         recommendations.append(
             Recommendation(
@@ -116,6 +123,7 @@ def build_recommendations(
     return recommendations[:5]
 
 
+# Recommendations when the solver did not find an optimal solution
 def _recommend_for_non_optimal_status(status: str) -> list[Recommendation]:
     if status == "Infeasible":
         return [

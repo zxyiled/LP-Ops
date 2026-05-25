@@ -3,6 +3,7 @@ import ProblemForm from "./components/ProblemForm.jsx";
 import ResultDashboard from "./components/ResultDashboard.jsx";
 import { solveLinearProblem } from "./services/api.ts";
 
+// --- Initial form state (2 variables + 1 constraint) ---
 const initialProblem = {
   title: "Modelo de programación lineal",
   context: "",
@@ -38,11 +39,13 @@ const initialProblem = {
 };
 
 export default function App() {
+  // Global state: model definition and solution
   const [problem, setProblem] = useState(initialProblem);
   const [result, setResult] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
+  // Stats shown in the hero panel
   const modelStats = useMemo(
     () => [
       { label: "Variables dinámicas", value: problem.variables.length },
@@ -52,6 +55,7 @@ export default function App() {
     [problem.variables.length, problem.constraints.length],
   );
 
+  // Sends the problem to the backend and handles response/error
   const handleSolve = async (payload) => {
     setIsLoading(true);
     setError("");
@@ -70,6 +74,7 @@ export default function App() {
 
   return (
     <main className="app-shell">
+      {/* Hero: header with title and stats */}
       <section className="hero">
         <div>
           <p className="eyebrow">Investigación de Operaciones · PIA</p>
@@ -89,6 +94,7 @@ export default function App() {
         </div>
       </section>
 
+      {/* Workspace: form on the left, results on the right */}
       <section className="workspace">
         <aside className="builder-panel">
           <ProblemForm
