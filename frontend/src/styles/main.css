@@ -792,3 +792,34 @@ td {
     color: #64748b;
     line-height: 1.6;
 }
+
+/* ========== Constraints list (assignment & transport) ========== */
+
+.constraints-list {
+    display: grid;
+    gap: 8px;
+}
+
+.constraint-line {
+    display: flex;
+    gap: 10px;
+    align-items: baseline;
+    border-radius: 12px;
+    padding: 10px 14px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    font-size: 0.9rem;
+    font-family: "JetBrains Mono", "Fira Code", "Consolas", monospace;
+}
+
+.constraint-line code {
+    color: #2563eb;
+    font-weight: 700;
+    white-space: nowrap;
+    font-family: inherit;
+}
+
+.constraint-line span {
+    color: #334155;
+    word-break: break-all;
+}

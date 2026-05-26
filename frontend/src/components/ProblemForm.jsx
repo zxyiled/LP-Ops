@@ -1,8 +1,8 @@
-// --- Generates unique IDs for each form row ---
+import { useState, useCallback } from "react";
+
 const makeId = (prefix) =>
   `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
-// --- Creates a default decision variable ---
 const makeVariable = (index) => ({
   id: makeId("variable"),
   name: `x${index}`,
@@ -11,358 +11,193 @@ const makeVariable = (index) => ({
   category: "continuous",
 });
 
-// --- Creates a default constraint with zero coefficients ---
 const makeConstraint = (index, variables) => ({
   id: makeId("constraint"),
   name: `R${index}`,
   coefficients: Object.fromEntries(
-    variables.map((variable) => [variable.name, 0]),
+    variables.map((v) => [v.name, 0])
   ),
   operator: "<=",
   rhs: 0,
 });
 
-// --- Converts a string to a number, returning 0 if invalid ---
 const toNumber = (value) => {
   if (value === "" || value === null || value === undefined) return 0;
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : 0;
 };
 
-const initialProblem = {
+const createInitialProblem = () => ({
   title: "Modelo de programación lineal",
   context: "",
   variables: [
-    {
-      id: makeId("variable"),
-      name: "x1",
-      lower_bound: 0,
-      upper_bound: "",
-      category: "continuous",
-    },
-    {
-      id: makeId("variable"),
-      name: "x2",
-      lower_bound: 0,
-      upper_bound: "",
-      category: "continuous",
-    },
+    { id: makeId("variable"), name: "x1", lower_bound: 0, upper_bound: "", category: "continuous" },
+    { id: makeId("variable"), name: "x2", lower_bound: 0, upper_bound: "", category: "continuous" },
   ],
-  objective: {
-    sense: "maximize",
-    coefficients: { x1: 0, x2: 0 },
-  },
+  objective: { sense: "maximize", coefficients: { x1: 0, x2: 0 } },
   constraints: [
-    {
-      id: makeId("constraint"),
-      name: "R1",
-      coefficients: { x1: 0, x2: 0 },
-      operator: "<=",
-      rhs: 0,
-    },
+    { id: makeId("constraint"), name: "R1", coefficients: { x1: 0, x2: 0 }, operator: "<=", rhs: 0 },
   ],
+});
+
+const furnitureExample = () => {
+  const names = ["Mesa", "Silla", "Armario", "Estante", "Escritorio", "Cama", "Librero", "Cajonera", "Banco"];
+  const coeffs = { Mesa: 45, Silla: 32, Armario: 28, Estante: 51, Escritorio: 37, Cama: 19, Librero: 42, Cajonera: 55, Banco: 30 };
+  const variables = names.map((name) => ({ ...makeVariable(0), name }));
+  return {
+    title: "Optimización de mezcla de producción — 9 productos",
+    context: "Una fábrica de muebles produce 9 productos distintos y debe decidir cuántas unidades fabricar de cada uno para maximizar la ganancia total, sujeto a restricciones de mano de obra, materias primas, capacidad de máquina, almacenamiento y demanda del mercado.",
+    variables,
+    objective: { sense: "maximize", coefficients: { ...coeffs } },
+    constraints: [
+      { id: makeId("constraint"), name: "Mano de obra", coefficients: { Mesa: 3, Silla: 2, Armario: 4, Estante: 5, Escritorio: 3, Cama: 2, Librero: 4, Cajonera: 6, Banco: 3 }, operator: "<=", rhs: 1000 },
+      { id: makeId("constraint"), name: "Materia prima A", coefficients: { Mesa: 2, Silla: 3, Armario: 1, Estante: 4, Escritorio: 2, Cama: 3, Librero: 2, Cajonera: 1, Banco: 4 }, operator: "<=", rhs: 750 },
+      { id: makeId("constraint"), name: "Materia prima B", coefficients: { Mesa: 4, Silla: 1, Armario: 3, Estante: 2, Escritorio: 5, Cama: 1, Librero: 3, Cajonera: 2, Banco: 2 }, operator: "<=", rhs: 900 },
+      { id: makeId("constraint"), name: "Capacidad máquina", coefficients: { Mesa: 5, Silla: 4, Armario: 2, Estante: 3, Escritorio: 4, Cama: 5, Librero: 1, Cajonera: 3, Banco: 2 }, operator: "<=", rhs: 1200 },
+      { id: makeId("constraint"), name: "Almacenamiento", coefficients: { Mesa: 2, Silla: 2, Armario: 3, Estante: 2, Escritorio: 1, Cama: 2, Librero: 3, Cajonera: 2, Banco: 2 }, operator: "<=", rhs: 500 },
+      { id: makeId("constraint"), name: "Demanda mínima total", coefficients: { Mesa: 1, Silla: 1, Armario: 1, Estante: 1, Escritorio: 1, Cama: 1, Librero: 1, Cajonera: 1, Banco: 1 }, operator: ">=", rhs: 30 },
+      { id: makeId("constraint"), name: "Mix de producción", coefficients: { Mesa: 2, Silla: 1, Armario: 3, Estante: 2, Escritorio: 1, Cama: 2, Librero: 3, Cajonera: 2, Banco: 1 }, operator: "<=", rhs: 400 },
+    ],
+  };
 };
 
-export default function ProblemForm({
-  onSolve,
-  isLoading,
-  error,
-}) {
-  const [problem, setProblem] = useState(initialProblem);
+export default function ProblemForm({ onSolve, isLoading, error }) {
+  const [problem, setProblem] = useState(createInitialProblem);
 
-  // --- Updates general problem fields (title, context) ---
-  const updateProblem = (patch) =>
-    setProblem((current) => ({ ...current, ...patch }));
+  const updateProblem = useCallback((patch) =>
+    setProblem((c) => ({ ...c, ...patch })), []);
 
-  // --- Updates a single objective function coefficient ---
-  const updateObjectiveCoefficient = (variableName, value) => {
-    setProblem((current) => ({
-      ...current,
-      objective: {
-        ...current.objective,
-        coefficients: {
-          ...current.objective.coefficients,
-          [variableName]: value,
-        },
-      },
+  const updateObjectiveCoefficient = useCallback((name, value) => {
+    setProblem((c) => ({
+      ...c,
+      objective: { ...c.objective, coefficients: { ...c.objective.coefficients, [name]: value } },
     }));
-  };
+  }, []);
 
-  // --- Updates a variable and syncs its name across objective and constraints ---
-  const updateVariable = (index, field, value) => {
-    setProblem((current) => {
-      const oldVariable = current.variables[index];
-      const variables = current.variables.map((variable, variableIndex) =>
-        variableIndex === index ? { ...variable, [field]: value } : variable,
-      );
+  const updateVariable = useCallback((index, field, value) => {
+    setProblem((c) => {
+      const old = c.variables[index];
+      const vars = c.variables.map((v, i) => (i === index ? { ...v, [field]: value } : v));
+      if (field !== "name") return { ...c, variables: vars };
 
-      if (field !== "name") {
-        return { ...current, variables };
-      }
+      const nextName = value.trim() || old.name;
+      const oc = { ...c.objective.coefficients };
+      oc[nextName] = oc[old.name] ?? 0;
+      if (nextName !== old.name) delete oc[old.name];
 
-      // When the name changes, carry the coefficient to the new key
-      const oldName = oldVariable.name;
-      const nextName = value.trim() || oldName;
-      const objectiveCoefficients = { ...current.objective.coefficients };
-      objectiveCoefficients[nextName] = objectiveCoefficients[oldName] ?? 0;
-      if (nextName !== oldName) delete objectiveCoefficients[oldName];
-
-      const constraints = current.constraints.map((constraint) => {
-        const coefficients = { ...constraint.coefficients };
-        coefficients[nextName] = coefficients[oldName] ?? 0;
-        if (nextName !== oldName) delete coefficients[oldName];
-        return { ...constraint, coefficients };
+      const cons = c.constraints.map((con) => {
+        const cc = { ...con.coefficients };
+        cc[nextName] = cc[old.name] ?? 0;
+        if (nextName !== old.name) delete cc[old.name];
+        return { ...con, coefficients: cc };
       });
 
-      return {
-        ...current,
-        variables,
-        objective: {
-          ...current.objective,
-          coefficients: objectiveCoefficients,
-        },
-        constraints,
-      };
+      return { ...c, variables: vars, objective: { ...c.objective, coefficients: oc }, constraints: cons };
     });
-  };
+  }, []);
 
-  // --- Adds a new variable (propagates to objective and constraints) ---
-  const addVariable = () => {
-    setProblem((current) => {
-      const nextVariable = makeVariable(current.variables.length + 1);
+  const addVariable = useCallback(() => {
+    setProblem((c) => {
+      const nv = makeVariable(c.variables.length + 1);
       return {
-        ...current,
-        variables: [...current.variables, nextVariable],
-        objective: {
-          ...current.objective,
-          coefficients: {
-            ...current.objective.coefficients,
-            [nextVariable.name]: 0,
-          },
-        },
-        constraints: current.constraints.map((constraint) => ({
-          ...constraint,
-          coefficients: {
-            ...constraint.coefficients,
-            [nextVariable.name]: 0,
-          },
+        ...c,
+        variables: [...c.variables, nv],
+        objective: { ...c.objective, coefficients: { ...c.objective.coefficients, [nv.name]: 0 } },
+        constraints: c.constraints.map((con) => ({
+          ...con, coefficients: { ...con.coefficients, [nv.name]: 0 },
         })),
       };
     });
-  };
+  }, []);
 
-  // --- Removes a variable from objective and constraints ---
-  const removeVariable = (variableName) => {
-    setProblem((current) => {
-      if (current.variables.length === 1) return current;
-
-      const objectiveCoefficients = { ...current.objective.coefficients };
-      delete objectiveCoefficients[variableName];
-
+  const removeVariable = useCallback((name) => {
+    setProblem((c) => {
+      if (c.variables.length <= 1) return c;
+      const oc = { ...c.objective.coefficients };
+      delete oc[name];
       return {
-        ...current,
-        variables: current.variables.filter(
-          (variable) => variable.name !== variableName,
-        ),
-        objective: {
-          ...current.objective,
-          coefficients: objectiveCoefficients,
-        },
-        constraints: current.constraints.map((constraint) => {
-          const coefficients = { ...constraint.coefficients };
-          delete coefficients[variableName];
-          return { ...constraint, coefficients };
+        ...c,
+        variables: c.variables.filter((v) => v.name !== name),
+        objective: { ...c.objective, coefficients: oc },
+        constraints: c.constraints.map((con) => {
+          const cc = { ...con.coefficients };
+          delete cc[name];
+          return { ...con, coefficients: cc };
         }),
       };
     });
-  };
+  }, []);
 
-  // --- Adds a new constraint ---
-  const addConstraint = () => {
-    setProblem((current) => ({
-      ...current,
-      constraints: [
-        ...current.constraints,
-        makeConstraint(current.constraints.length + 1, current.variables),
-      ],
+  const addConstraint = useCallback(() => {
+    setProblem((c) => ({
+      ...c,
+      constraints: [...c.constraints, makeConstraint(c.constraints.length + 1, c.variables)],
     }));
-  };
+  }, []);
 
-  // --- Removes a constraint by index ---
-  const removeConstraint = (index) => {
-    setProblem((current) => ({
-      ...current,
-      constraints: current.constraints.filter(
-        (_, constraintIndex) => constraintIndex !== index,
+  const removeConstraint = useCallback((index) => {
+    setProblem((c) => ({
+      ...c,
+      constraints: c.constraints.filter((_, i) => i !== index),
+    }));
+  }, []);
+
+  const updateConstraint = useCallback((index, field, value) => {
+    setProblem((c) => ({
+      ...c,
+      constraints: c.constraints.map((con, i) => (i === index ? { ...con, [field]: value } : con)),
+    }));
+  }, []);
+
+  const updateConstraintCoefficient = useCallback((index, varName, value) => {
+    setProblem((c) => ({
+      ...c,
+      constraints: c.constraints.map((con, i) =>
+        i === index ? { ...con, coefficients: { ...con.coefficients, [varName]: value } } : con
       ),
     }));
-  };
+  }, []);
 
-  // --- Updates a constraint field (name, operator, RHS) ---
-  const updateConstraint = (index, field, value) => {
-    setProblem((current) => ({
-      ...current,
-      constraints: current.constraints.map((constraint, constraintIndex) =>
-        constraintIndex === index
-          ? { ...constraint, [field]: value }
-          : constraint,
-      ),
-    }));
-  };
+  const loadExample = useCallback(() => setProblem(furnitureExample()), []);
 
-  // --- Updates a specific coefficient inside a constraint ---
-  const updateConstraintCoefficient = (index, variableName, value) => {
-    setProblem((current) => ({
-      ...current,
-      constraints: current.constraints.map((constraint, constraintIndex) =>
-        constraintIndex === index
-          ? {
-              ...constraint,
-              coefficients: {
-                ...constraint.coefficients,
-                [variableName]: value,
-              },
-            }
-          : constraint,
-      ),
-    }));
-  };
-
-  // --- Loads the 9-product (furniture) example problem ---
-  const loadExample = () => {
-    const variableNames = [
-      "Mesa", "Silla", "Armario", "Estante", "Escritorio",
-      "Cama", "Librero", "Cajonera", "Banco",
-    ];
-    const variables = variableNames.map((name, i) => ({
-      ...makeVariable(i + 1),
-      name,
-    }));
-    const coeffs = {
-      Mesa: 45, Silla: 32, Armario: 28, Estante: 51, Escritorio: 37,
-      Cama: 19, Librero: 42, Cajonera: 55, Banco: 30,
-    };
-
-    setProblem({
-      title: "Optimización de mezcla de producción — 9 productos",
-      context:
-        "Una fábrica de muebles produce 9 productos distintos y debe decidir cuántas unidades fabricar de cada uno para maximizar la ganancia total, sujeto a restricciones de mano de obra, materias primas, capacidad de máquina, almacenamiento y demanda del mercado.",
-      variables,
-      objective: {
-        sense: "maximize",
-        coefficients: { ...coeffs },
-      },
-      constraints: [
-        {
-          id: makeId("constraint"),
-          name: "Mano de obra",
-          coefficients: { Mesa: 3, Silla: 2, Armario: 4, Estante: 5, Escritorio: 3, Cama: 2, Librero: 4, Cajonera: 6, Banco: 3 },
-          operator: "<=",
-          rhs: 1000,
-        },
-        {
-          id: makeId("constraint"),
-          name: "Materia prima A",
-          coefficients: { Mesa: 2, Silla: 3, Armario: 1, Estante: 4, Escritorio: 2, Cama: 3, Librero: 2, Cajonera: 1, Banco: 4 },
-          operator: "<=",
-          rhs: 750,
-        },
-        {
-          id: makeId("constraint"),
-          name: "Materia prima B",
-          coefficients: { Mesa: 4, Silla: 1, Armario: 3, Estante: 2, Escritorio: 5, Cama: 1, Librero: 3, Cajonera: 2, Banco: 2 },
-          operator: "<=",
-          rhs: 900,
-        },
-        {
-          id: makeId("constraint"),
-          name: "Capacidad máquina",
-          coefficients: { Mesa: 5, Silla: 4, Armario: 2, Estante: 3, Escritorio: 4, Cama: 5, Librero: 1, Cajonera: 3, Banco: 2 },
-          operator: "<=",
-          rhs: 1200,
-        },
-        {
-          id: makeId("constraint"),
-          name: "Almacenamiento",
-          coefficients: { Mesa: 2, Silla: 2, Armario: 3, Estante: 2, Escritorio: 1, Cama: 2, Librero: 3, Cajonera: 2, Banco: 2 },
-          operator: "<=",
-          rhs: 500,
-        },
-        {
-          id: makeId("constraint"),
-          name: "Demanda mínima total",
-          coefficients: { Mesa: 1, Silla: 1, Armario: 1, Estante: 1, Escritorio: 1, Cama: 1, Librero: 1, Cajonera: 1, Banco: 1 },
-          operator: ">=",
-          rhs: 30,
-        },
-        {
-          id: makeId("constraint"),
-          name: "Mix de producción",
-          coefficients: { Mesa: 2, Silla: 1, Armario: 3, Estante: 2, Escritorio: 1, Cama: 2, Librero: 3, Cajonera: 2, Banco: 1 },
-          operator: "<=",
-          rhs: 400,
-        },
-      ],
-    });
-  };
-
-
-
-  // --- Prepares the payload by cleaning values before sending to the backend ---
   const preparePayload = () => ({
     modelType: "classical",
     payload: {
       title: problem.title.trim() || "Modelo de programación lineal",
       context: problem.context?.trim() || undefined,
-      variables: problem.variables.map((variable) => ({
-        name: variable.name.trim(),
-        lower_bound:
-          variable.category === "binary" ? 0 : toNumber(variable.lower_bound),
-        upper_bound:
-          variable.category === "binary" || variable.upper_bound === ""
-            ? null
-            : toNumber(variable.upper_bound),
-        category: variable.category,
+      variables: problem.variables.map((v) => ({
+        name: v.name.trim(),
+        lower_bound: v.category === "binary" ? 0 : toNumber(v.lower_bound),
+        upper_bound: v.category === "binary" || v.upper_bound === "" ? null : toNumber(v.upper_bound),
+        category: v.category,
       })),
       objective: {
         sense: problem.objective.sense,
         coefficients: Object.fromEntries(
-          problem.variables.map((variable) => [
-            variable.name.trim(),
-            toNumber(problem.objective.coefficients[variable.name]),
-          ]),
+          problem.variables.map((v) => [v.name.trim(), toNumber(problem.objective.coefficients[v.name])])
         ),
       },
-      constraints: problem.constraints.map((constraint) => ({
-        name: constraint.name.trim(),
-        operator: constraint.operator,
-        rhs: toNumber(constraint.rhs),
+      constraints: problem.constraints.map((con) => ({
+        name: con.name.trim(),
+        operator: con.operator,
+        rhs: toNumber(con.rhs),
         coefficients: Object.fromEntries(
-          problem.variables.map((variable) => [
-            variable.name.trim(),
-            toNumber(constraint.coefficients[variable.name]),
-          ]),
+          problem.variables.map((v) => [v.name.trim(), toNumber(con.coefficients[v.name])])
         ),
       })),
     },
   });
 
-  // --- Submits the form ---
-  const handleSubmit = (event) => {
-    event.preventDefault();
+  const handleSubmit = (e) => {
+    e.preventDefault();
     onSolve(preparePayload());
   };
 
-  // --- Detects duplicate variable names to block submission ---
-  const variableNames = problem.variables
-    .map((variable) => variable.name.trim())
-    .filter(Boolean);
-  const hasDuplicateVariables =
-    new Set(variableNames).size !== variableNames.length;
+  const varNames = problem.variables.map((v) => v.name.trim()).filter(Boolean);
+  const hasDups = new Set(varNames).size !== varNames.length;
 
   return (
     <form className="problem-form" onSubmit={handleSubmit}>
-      {/* Section: general model data */}
       <div className="form-card">
         <div className="section-heading split">
           <div>
@@ -373,43 +208,24 @@ export default function ProblemForm({
             Cargar ejemplo
           </button>
         </div>
-
         <label>
           Nombre del problema
-          <input
-            value={problem.title}
-            onChange={(event) => updateProblem({ title: event.target.value })}
-            placeholder="Ej. Plan óptimo de producción"
-          />
+          <input value={problem.title} onChange={(e) => updateProblem({ title: e.target.value })} placeholder="Ej. Plan óptimo de producción" />
         </label>
-
         <label>
           Contexto breve
-          <textarea
-            value={problem.context}
-            onChange={(event) => updateProblem({ context: event.target.value })}
-            placeholder="Describe recursos, productos, costos o ganancias para enriquecer las recomendaciones."
-            rows={3}
-          />
+          <textarea value={problem.context} onChange={(e) => updateProblem({ context: e.target.value })} placeholder="Describe recursos, productos, costos o ganancias para enriquecer las recomendaciones." rows={3} />
         </label>
       </div>
 
-      {/* Section: decision variables table */}
       <div className="form-card">
         <div className="section-heading split">
           <div>
             <p className="eyebrow">Variables</p>
             <h2>Variables de decisión</h2>
           </div>
-          <button
-            className="primary-button small"
-            type="button"
-            onClick={addVariable}
-          >
-            + Variable
-          </button>
+          <button className="primary-button small" type="button" onClick={addVariable}>+ Variable</button>
         </div>
-
         <div className="table-wrapper editable">
           <table>
             <thead>
@@ -422,250 +238,115 @@ export default function ProblemForm({
               </tr>
             </thead>
             <tbody>
-              {problem.variables.map((variable, index) => (
-                <tr key={variable.id ?? index}>
+              {problem.variables.map((v, i) => (
+                <tr key={v.id ?? i}>
+                  <td><input value={v.name} onChange={(e) => updateVariable(i, "name", e.target.value)} /></td>
                   <td>
-                    <input
-                      value={variable.name}
-                      onChange={(event) =>
-                        updateVariable(index, "name", event.target.value)
-                      }
-                    />
-                  </td>
-                  <td>
-                    <select
-                      value={variable.category}
-                      onChange={(event) =>
-                        updateVariable(index, "category", event.target.value)
-                      }
-                    >
+                    <select value={v.category} onChange={(e) => updateVariable(i, "category", e.target.value)}>
                       <option value="continuous">Continua</option>
                       <option value="integer">Entera</option>
                       <option value="binary">Binaria</option>
                     </select>
                   </td>
                   <td>
-                    <input
-                      type="number"
-                      step="any"
-                      value={variable.lower_bound}
-                      disabled={variable.category === "binary"}
-                      onChange={(event) =>
-                        updateVariable(index, "lower_bound", event.target.value)
-                      }
-                    />
+                    <input type="number" step="any" value={v.lower_bound}
+                      disabled={v.category === "binary"}
+                      onChange={(e) => updateVariable(i, "lower_bound", e.target.value)} />
                   </td>
                   <td>
-                    <input
-                      type="number"
-                      step="any"
-                      value={
-                        variable.category === "binary"
-                          ? 1
-                          : variable.upper_bound
-                      }
-                      disabled={variable.category === "binary"}
-                      placeholder="Sin límite"
-                      onChange={(event) =>
-                        updateVariable(index, "upper_bound", event.target.value)
-                      }
-                    />
+                    <input type="number" step="any"
+                      value={v.category === "binary" ? 1 : v.upper_bound}
+                      disabled={v.category === "binary"} placeholder="Sin límite"
+                      onChange={(e) => updateVariable(i, "upper_bound", e.target.value)} />
                   </td>
                   <td>
-                    <button
-                      className="icon-button"
-                      type="button"
-                      onClick={() => removeVariable(variable.name)}
-                      disabled={problem.variables.length === 1}
-                    >
-                      ×
-                    </button>
+                    <button className="icon-button" type="button"
+                      onClick={() => removeVariable(v.name)} disabled={problem.variables.length === 1}>×</button>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-        {hasDuplicateVariables && (
-          <p className="form-warning">
-            Los nombres de variables deben ser únicos.
-          </p>
-        )}
+        {hasDups && <p className="form-warning">Los nombres de variables deben ser únicos.</p>}
       </div>
 
-      {/* Section: objective function (sense + coefficients) */}
       <div className="form-card">
         <div className="section-heading">
           <p className="eyebrow">Función objetivo</p>
           <h2>Z = coeficientes × variables</h2>
         </div>
-
         <div className="objective-toolbar">
           <label className="inline-label">
             Sentido
-            <select
-              value={problem.objective.sense}
-              onChange={(event) =>
-                setProblem((current) => ({
-                  ...current,
-                  objective: {
-                    ...current.objective,
-                    sense: event.target.value,
-                  },
-                }))
-              }
-            >
+            <select value={problem.objective.sense}
+              onChange={(e) => setProblem((c) => ({ ...c, objective: { ...c.objective, sense: e.target.value } }))}>
               <option value="maximize">Maximizar</option>
               <option value="minimize">Minimizar</option>
             </select>
           </label>
         </div>
-
         <div className="coefficient-grid">
-          {problem.variables.map((variable) => (
-            <label key={variable.id ?? variable.name}>
-              Coef. {variable.name}
-              <input
-                type="number"
-                step="any"
-                value={problem.objective.coefficients[variable.name] ?? 0}
-                onChange={(event) =>
-                  updateObjectiveCoefficient(variable.name, event.target.value)
-                }
-              />
+          {problem.variables.map((v) => (
+            <label key={v.id ?? v.name}>
+              Coef. {v.name}
+              <input type="number" step="any" value={problem.objective.coefficients[v.name] ?? 0}
+                onChange={(e) => updateObjectiveCoefficient(v.name, e.target.value)} />
             </label>
           ))}
         </div>
       </div>
 
-      {/* Section: dynamic constraint matrix */}
       <div className="form-card wide-card">
         <div className="section-heading split">
           <div>
             <p className="eyebrow">Restricciones</p>
             <h2>Matriz dinámica de coeficientes</h2>
           </div>
-          <button
-            className="primary-button small"
-            type="button"
-            onClick={addConstraint}
-          >
-            + Restricción
-          </button>
+          <button className="primary-button small" type="button" onClick={addConstraint}>+ Restricción</button>
         </div>
-
         <div className="table-wrapper editable constraints-table">
           <table>
             <thead>
               <tr>
                 <th>Nombre</th>
-                {problem.variables.map((variable) => (
-                  <th key={variable.id ?? variable.name}>
-                    {variable.name || "Variable"}
-                  </th>
-                ))}
+                {problem.variables.map((v) => <th key={v.id ?? v.name}>{v.name || "Variable"}</th>)}
                 <th>Operador</th>
                 <th>Límite</th>
                 <th></th>
               </tr>
             </thead>
             <tbody>
-              {problem.constraints.map((constraint, constraintIndex) => (
-                <tr key={constraint.id ?? constraintIndex}>
-                  <td>
-                    <input
-                      value={constraint.name}
-                      onChange={(event) =>
-                        updateConstraint(
-                          constraintIndex,
-                          "name",
-                          event.target.value,
-                        )
-                      }
-                    />
-                  </td>
-                  {problem.variables.map((variable) => (
-                    <td key={variable.id ?? variable.name}>
-                      <input
-                        type="number"
-                        step="any"
-                        value={constraint.coefficients[variable.name] ?? 0}
-                        onChange={(event) =>
-                          updateConstraintCoefficient(
-                            constraintIndex,
-                            variable.name,
-                            event.target.value,
-                          )
-                        }
-                      />
+              {problem.constraints.map((con, ci) => (
+                <tr key={con.id ?? ci}>
+                  <td><input value={con.name} onChange={(e) => updateConstraint(ci, "name", e.target.value)} /></td>
+                  {problem.variables.map((v) => (
+                    <td key={v.id ?? v.name}>
+                      <input type="number" step="any" value={con.coefficients[v.name] ?? 0}
+                        onChange={(e) => updateConstraintCoefficient(ci, v.name, e.target.value)} />
                     </td>
                   ))}
                   <td>
-                    <select
-                      value={constraint.operator}
-                      onChange={(event) =>
-                        updateConstraint(
-                          constraintIndex,
-                          "operator",
-                          event.target.value,
-                        )
-                      }
-                    >
+                    <select value={con.operator} onChange={(e) => updateConstraint(ci, "operator", e.target.value)}>
                       <option value="<=">≤</option>
                       <option value=">=">≥</option>
                       <option value="=">=</option>
                     </select>
                   </td>
-                  <td>
-                    <input
-                      type="number"
-                      step="any"
-                      value={constraint.rhs}
-                      onChange={(event) =>
-                        updateConstraint(
-                          constraintIndex,
-                          "rhs",
-                          event.target.value,
-                        )
-                      }
-                    />
-                  </td>
-                  <td>
-                    <button
-                      className="icon-button"
-                      type="button"
-                      onClick={() => removeConstraint(constraintIndex)}
-                    >
-                      ×
-                    </button>
-                  </td>
+                  <td><input type="number" step="any" value={con.rhs} onChange={(e) => updateConstraint(ci, "rhs", e.target.value)} /></td>
+                  <td><button className="icon-button" type="button" onClick={() => removeConstraint(ci)}>×</button></td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-
-        {problem.constraints.length === 0 && (
-          <p className="hint">
-            Agrega al menos una restricción para representar recursos, demanda o
-            capacidad.
-          </p>
-        )}
       </div>
 
-      {/* Backend error message */}
       {error && <div className="error-box">{error}</div>}
 
-      {/* Main solve button */}
-      <button
-        className="solve-button"
-        type="submit"
-        disabled={isLoading || hasDuplicateVariables}
-      >
+      <button className="solve-button" type="submit" disabled={isLoading || hasDups}>
         {isLoading ? "Resolviendo modelo..." : "Resolver con PuLP"}
       </button>
     </form>
   );
 }
-
-

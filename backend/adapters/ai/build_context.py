@@ -10,11 +10,15 @@ def build_solution_context(
     payload: dict[str, Any],
     result: dict[str, Any],
 ) -> dict[str, Any]:
+    context_text = payload.get("context")
+    explicit_constraints = payload.get("constraints", [])
+
     context = {
         "modelType": model_type,
+        "businessContext": context_text,
+        "explicitConstraints": explicit_constraints,
         "objective": payload.get("objective", {}),
         "variables": payload.get("variables", []),
-        "constraints": payload.get("constraints", []),
         "solution": {
             "status": result.get("status"),
             "objective_value": result.get("objective_value"),
