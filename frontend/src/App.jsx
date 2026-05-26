@@ -1,64 +1,21 @@
 import { useMemo, useState } from "react";
+import ModelSelector from "./components/ModelSelector.jsx";
 import ProblemForm from "./components/ProblemForm.jsx";
+import AssignmentForm from "./components/AssignmentForm.jsx";
+import TransportForm from "./components/TransportForm.jsx";
 import ResultDashboard from "./components/ResultDashboard.jsx";
 import { solveLinearProblem } from "./services/api.ts";
 
-// --- Initial form state (2 variables + 1 constraint) ---
-const initialProblem = {
-  title: "Modelo de programación lineal",
-  context: "",
-  variables: [
-    {
-      id: "variable-initial-1",
-      name: "x1",
-      lower_bound: 0,
-      upper_bound: "",
-      category: "continuous",
-    },
-    {
-      id: "variable-initial-2",
-      name: "x2",
-      lower_bound: 0,
-      upper_bound: "",
-      category: "continuous",
-    },
-  ],
-  objective: {
-    sense: "maximize",
-    coefficients: { x1: 0, x2: 0 },
-  },
-  constraints: [
-    {
-      id: "constraint-initial-1",
-      name: "R1",
-      coefficients: { x1: 0, x2: 0 },
-      operator: "<=",
-      rhs: 0,
-    },
-  ],
-};
-
 export default function App() {
-  // Global state: model definition and solution
-  const [problem, setProblem] = useState(initialProblem);
+  const [modelType, setModelType] = useState(null);
   const [result, setResult] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Stats shown in the hero panel
-  const modelStats = useMemo(
-    () => [
-      { label: "Variables dinámicas", value: problem.variables.length },
-      { label: "Restricciones", value: problem.constraints.length },
-      { label: "Solver", value: "PuLP + CBC" },
-    ],
-    [problem.variables.length, problem.constraints.length],
-  );
-
-  // Sends the problem to the backend and handles response/error
   const handleSolve = async (payload) => {
     setIsLoading(true);
     setError("");
+    setResult(null);
     try {
       const response = await solveLinearProblem(payload);
       setResult(response);
@@ -72,34 +29,69 @@ export default function App() {
     }
   };
 
+  const handleBack = () => {
+    setModelType(null);
+    setResult(null);
+    setError("");
+  };
+
+  const modelStats = useMemo(() => {
+    if (!result) return [];
+    return [
+      { label: "Variables", value: result.variables?.length || 0 },
+      { label: "Restricciones", value: result.constraints?.length || 0 },
+      { label: "Solver", value: "PuLP + CBC" },
+    ];
+  }, [result]);
+
+  if (!modelType) {
+    return (
+      <main className="app-shell">
+        <ModelSelector onSelect={setModelType} />
+      </main>
+    );
+  }
+
+  const modelLabels = {
+    classical: "Programación Lineal Clásica",
+    assignment: "Problema de Asignación",
+    transport: "Problema de Transporte",
+  };
+
+  const FormComponent = {
+    classical: ProblemForm,
+    assignment: AssignmentForm,
+    transport: TransportForm,
+  }[modelType];
+
   return (
     <main className="app-shell">
-      {/* Hero: header with title and stats */}
       <section className="hero">
         <div>
           <p className="eyebrow">Investigación de Operaciones · PIA</p>
           <h1>LP-Ops</h1>
           <p>
-            Solver web para programación lineal con variables y restricciones
-            dinámicas, dashboard de resultados e interpretación inteligente.
+            <button className="link-button" onClick={handleBack}>
+              ← Cambiar modelo
+            </button>
+            <span className="hero-model"> {modelLabels[modelType]}</span>
           </p>
         </div>
-        <div className="hero-panel">
-          {modelStats.map((stat) => (
-            <article key={stat.label}>
-              <strong>{stat.value}</strong>
-              <span>{stat.label}</span>
-            </article>
-          ))}
-        </div>
+        {modelStats.length > 0 && (
+          <div className="hero-panel">
+            {modelStats.map((stat) => (
+              <article key={stat.label}>
+                <strong>{stat.value}</strong>
+                <span>{stat.label}</span>
+              </article>
+            ))}
+          </div>
+        )}
       </section>
 
-      {/* Workspace: form on the left, results on the right */}
       <section className="workspace">
         <aside className="builder-panel">
-          <ProblemForm
-            problem={problem}
-            setProblem={setProblem}
+          <FormComponent
             onSolve={handleSolve}
             isLoading={isLoading}
             error={error}

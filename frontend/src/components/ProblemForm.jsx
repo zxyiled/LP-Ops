@@ -29,13 +29,47 @@ const toNumber = (value) => {
   return Number.isFinite(parsed) ? parsed : 0;
 };
 
+const initialProblem = {
+  title: "Modelo de programación lineal",
+  context: "",
+  variables: [
+    {
+      id: makeId("variable"),
+      name: "x1",
+      lower_bound: 0,
+      upper_bound: "",
+      category: "continuous",
+    },
+    {
+      id: makeId("variable"),
+      name: "x2",
+      lower_bound: 0,
+      upper_bound: "",
+      category: "continuous",
+    },
+  ],
+  objective: {
+    sense: "maximize",
+    coefficients: { x1: 0, x2: 0 },
+  },
+  constraints: [
+    {
+      id: makeId("constraint"),
+      name: "R1",
+      coefficients: { x1: 0, x2: 0 },
+      operator: "<=",
+      rhs: 0,
+    },
+  ],
+};
+
 export default function ProblemForm({
-  problem,
-  setProblem,
   onSolve,
   isLoading,
   error,
 }) {
+  const [problem, setProblem] = useState(initialProblem);
+
   // --- Updates general problem fields (title, context) ---
   const updateProblem = (patch) =>
     setProblem((current) => ({ ...current, ...patch }));
@@ -272,40 +306,45 @@ export default function ProblemForm({
     });
   };
 
+
+
   // --- Prepares the payload by cleaning values before sending to the backend ---
   const preparePayload = () => ({
-    title: problem.title.trim() || "Modelo de programación lineal",
-    context: problem.context?.trim() || undefined,
-    variables: problem.variables.map((variable) => ({
-      name: variable.name.trim(),
-      lower_bound:
-        variable.category === "binary" ? 0 : toNumber(variable.lower_bound),
-      upper_bound:
-        variable.category === "binary" || variable.upper_bound === ""
-          ? null
-          : toNumber(variable.upper_bound),
-      category: variable.category,
-    })),
-    objective: {
-      sense: problem.objective.sense,
-      coefficients: Object.fromEntries(
-        problem.variables.map((variable) => [
-          variable.name.trim(),
-          toNumber(problem.objective.coefficients[variable.name]),
-        ]),
-      ),
+    modelType: "classical",
+    payload: {
+      title: problem.title.trim() || "Modelo de programación lineal",
+      context: problem.context?.trim() || undefined,
+      variables: problem.variables.map((variable) => ({
+        name: variable.name.trim(),
+        lower_bound:
+          variable.category === "binary" ? 0 : toNumber(variable.lower_bound),
+        upper_bound:
+          variable.category === "binary" || variable.upper_bound === ""
+            ? null
+            : toNumber(variable.upper_bound),
+        category: variable.category,
+      })),
+      objective: {
+        sense: problem.objective.sense,
+        coefficients: Object.fromEntries(
+          problem.variables.map((variable) => [
+            variable.name.trim(),
+            toNumber(problem.objective.coefficients[variable.name]),
+          ]),
+        ),
+      },
+      constraints: problem.constraints.map((constraint) => ({
+        name: constraint.name.trim(),
+        operator: constraint.operator,
+        rhs: toNumber(constraint.rhs),
+        coefficients: Object.fromEntries(
+          problem.variables.map((variable) => [
+            variable.name.trim(),
+            toNumber(constraint.coefficients[variable.name]),
+          ]),
+        ),
+      })),
     },
-    constraints: problem.constraints.map((constraint) => ({
-      name: constraint.name.trim(),
-      operator: constraint.operator,
-      rhs: toNumber(constraint.rhs),
-      coefficients: Object.fromEntries(
-        problem.variables.map((variable) => [
-          variable.name.trim(),
-          toNumber(constraint.coefficients[variable.name]),
-        ]),
-      ),
-    })),
   });
 
   // --- Submits the form ---

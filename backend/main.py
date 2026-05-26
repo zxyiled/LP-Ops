@@ -2,12 +2,13 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from backend.routers.solver import router as solver_router
+from backend.routers.solve import router as unified_router
 
 # --- API entry point ---
 app = FastAPI(
     title="LP-Ops API",
-    description="API para resolver problemas dinámicos de programación lineal.",
-    version="1.0.0",
+    description="API modular para resolver modelos de programación lineal, asignación y transporte.",
+    version="2.0.0",
 )
 
 # Allow requests from the React frontend (localhost:5173)
@@ -31,3 +32,4 @@ def health_check() -> dict[str, str]:
 
 # Mount the solver routes under /api
 app.include_router(solver_router, prefix="/api")
+app.include_router(unified_router, prefix="/api")

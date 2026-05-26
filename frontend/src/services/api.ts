@@ -1,71 +1,39 @@
-// API base URL, configurable via environment variable
 const API_BASE_URL =
   import.meta.env.VITE_API_URL ?? "http://localhost:8000/api";
 
-// --- Payload types sent to the backend ---
 export type SolvePayload = {
-  title: string;
-  context?: string;
-  variables: Array<{
-    name: string;
-    lower_bound: number | null;
-    upper_bound: number | null;
-    category: "continuous" | "integer" | "binary";
-  }>;
-  objective: {
-    sense: "maximize" | "minimize";
-    coefficients: Record<string, number>;
-  };
-  constraints: Array<{
-    name: string;
-    coefficients: Record<string, number>;
-    operator: "<=" | ">=" | "=";
-    rhs: number;
-  }>;
+  modelType: "classical" | "assignment" | "transport";
+  payload: Record<string, unknown>;
 };
 
-// --- Response type returned by the backend ---
 export type SolveResponse = {
+  modelType: string;
   status: string;
   status_label: string;
   is_optimal: boolean;
   objective_value: number | null;
-  variables: Array<{
-    name: string;
-    value: number;
-    objective_coefficient: number;
-    contribution: number;
-  }>;
-  constraints: Array<{
-    name: string;
-    operator: "<=" | ">=" | "=";
-    rhs: number;
-    activity: number;
-    slack: number;
-    is_binding: boolean;
-    shadow_price: number | null;
-  }>;
+  results: Record<string, unknown>;
+  variables: Array<Record<string, unknown>>;
+  constraints: Array<Record<string, unknown>>;
   interpretation: string;
   recommendations: Array<{
     title: string;
     description: string;
     severity: "info" | "success" | "warning";
   }>;
+  ai_analysis: Record<string, unknown> | null;
+  visualization: Record<string, unknown> | null;
 };
 
-// --- Sends the problem to the backend and returns the solution ---
 export async function solveLinearProblem(
   payload: SolvePayload,
 ): Promise<SolveResponse> {
-  const response = await fetch(`${API_BASE_URL}/solver/solve`, {
+  const response = await fetch(`${API_BASE_URL}/solve`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
 
-  // Error handling: extracts the backend message when possible
   if (!response.ok) {
     let message = "No se pudo resolver el modelo.";
     try {
@@ -81,4 +49,10 @@ export async function solveLinearProblem(
   }
 
   return response.json();
+}
+
+export async function fetchModels(): Promise<string[]> {
+  const response = await fetch(`${API_BASE_URL}/models`);
+  const data = await response.json();
+  return data.models;
 }
