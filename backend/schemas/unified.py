@@ -25,3 +25,4 @@ class UnifiedSolveResponse(BaseModel):
     recommendations: list[Dict[str, Any]] = Field(default_factory=list)
     ai_analysis: Optional[Dict[str, Any]] = None
     visualization: Optional[Dict[str, Any]] = None
+    solve_id: Optional[str] = None
