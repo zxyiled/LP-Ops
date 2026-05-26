@@ -46,8 +46,8 @@ def analyze_with_opencode(context: dict[str, Any]) -> dict[str, Any] | None:
     text = _wait_for_text_event(proc, timeout=TIMEOUT)
 
     _kill_process(proc)
-    stderr = _read_stderr(proc)
     _close_pipe(proc.stdout)
+    stderr = _try_read_stderr(proc)
     _close_pipe(proc.stderr)
 
     if text is None:
@@ -94,11 +94,21 @@ def _wait_for_text_event(proc: subprocess.Popen, timeout: int) -> str | None:
     return None
 
 
-def _read_stderr(proc: subprocess.Popen) -> str:
-    try:
-        return proc.stderr.read()
-    except Exception:
-        return ""
+def _try_read_stderr(proc: subprocess.Popen, timeout: int = 2) -> str:
+    result: list[str] = []
+
+    def reader():
+        try:
+            data = proc.stderr.read()
+            if data:
+                result.append(data)
+        except Exception:
+            pass
+
+    thread = threading.Thread(target=reader, daemon=True)
+    thread.start()
+    thread.join(timeout=timeout)
+    return result[0] if result else ""
 
 
 def _kill_process(proc: subprocess.Popen) -> None:

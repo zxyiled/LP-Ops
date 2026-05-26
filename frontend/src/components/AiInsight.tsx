@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import type { AiInsight as AiInsightType } from '../types/api';
 import { usePollAi } from '../hooks/usePollAi';
 import { AiSkeleton } from './Skeleton';
@@ -43,14 +43,11 @@ function AiHeader({ count }: { count: number }) {
 
 export function AiInsight({ solveId }: AiInsightProps) {
   const { insights, status, error, start, reset } = usePollAi();
-  const prevSolveId = useRef<string | null>(null);
 
   useEffect(() => {
-    if (solveId && solveId !== prevSolveId.current) {
-      prevSolveId.current = solveId;
+    if (solveId) {
       start(solveId);
-    } else if (!solveId) {
-      prevSolveId.current = null;
+    } else {
       reset();
     }
   }, [solveId, start, reset]);
