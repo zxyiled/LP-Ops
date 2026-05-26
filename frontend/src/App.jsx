@@ -1,24 +1,30 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import ModelSelector from "./components/ModelSelector.jsx";
 import ProblemForm from "./components/ProblemForm.jsx";
 import AssignmentForm from "./components/AssignmentForm.jsx";
 import TransportForm from "./components/TransportForm.jsx";
 import ResultDashboard from "./components/ResultDashboard.jsx";
-import { solveLinearProblem } from "./services/api.ts";
+import { pollAiAnalysis, solveLinearProblem } from "./services/api.ts";
 
 export default function App() {
   const [modelType, setModelType] = useState(null);
   const [result, setResult] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
+  const pollRef = useRef(null);
 
   const handleSolve = async (payload) => {
     setIsLoading(true);
     setError("");
     setResult(null);
+    setAiLoading(false);
     try {
       const response = await solveLinearProblem(payload);
       setResult(response);
+      if (response.solve_id) {
+        setAiLoading(true);
+      }
     } catch (currentError) {
       setError(
         currentError.message || "Ocurrió un error al resolver el modelo.",
@@ -28,6 +34,29 @@ export default function App() {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (!result?.solve_id) return;
+
+    pollRef.current = setInterval(async () => {
+      try {
+        const data = await pollAiAnalysis(result.solve_id);
+        if (data.status === "done") {
+          setResult((prev) => ({
+            ...prev,
+            ai_analysis: data.insights,
+          }));
+          setAiLoading(false);
+          clearInterval(pollRef.current);
+        }
+      } catch {
+        setAiLoading(false);
+        clearInterval(pollRef.current);
+      }
+    }, 1500);
+
+    return () => clearInterval(pollRef.current);
+  }, [result?.solve_id]);
 
   const handleBack = () => {
     setModelType(null);
@@ -98,7 +127,7 @@ export default function App() {
           />
         </aside>
         <section className="results-panel">
-          <ResultDashboard result={result} />
+          <ResultDashboard result={result} aiLoading={aiLoading} />
         </section>
       </section>
     </main>

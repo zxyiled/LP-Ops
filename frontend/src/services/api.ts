@@ -23,6 +23,7 @@ export type SolveResponse = {
   }>;
   ai_analysis: Record<string, unknown> | null;
   visualization: Record<string, unknown> | null;
+  solve_id: string | null;
 };
 
 export async function solveLinearProblem(
@@ -55,4 +56,11 @@ export async function fetchModels(): Promise<string[]> {
   const response = await fetch(`${API_BASE_URL}/models`);
   const data = await response.json();
   return data.models;
+}
+
+export async function pollAiAnalysis(
+  solveId: string,
+): Promise<{ status: string; insights: Record<string, unknown> | null }> {
+  const response = await fetch(`${API_BASE_URL}/solve/${solveId}/ai`);
+  return response.json();
 }

@@ -208,7 +208,7 @@ function TransportResults({ result }) {
   );
 }
 
-export default function ResultDashboard({ result }) {
+export default function ResultDashboard({ result, aiLoading }) {
   if (!result) {
     return (
       <section className="empty-state">
@@ -281,6 +281,27 @@ export default function ResultDashboard({ result }) {
         </article>
       )}
 
+      {aiLoading && !result.ai_analysis && (
+        <article className="ai-insights-section">
+          <div className="section-heading">
+            <p className="eyebrow">IA · Análisis inteligente</p>
+            <h2>Insights y recomendaciones</h2>
+          </div>
+          <div className="ai-insights-grid">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="insight-card skeleton">
+                <div className="skeleton-badge" />
+                <div className="skeleton-title" />
+                <div className="skeleton-line" />
+                <div className="skeleton-line short" />
+              </div>
+            ))}
+          </div>
+          <p className="ai-loading-text">
+            Generando análisis inteligente con IA…
+          </p>
+        </article>
+      )}
       {result.ai_analysis && <AIInsights analysis={result.ai_analysis} />}
     </section>
   );
