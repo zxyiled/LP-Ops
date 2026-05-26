@@ -6,14 +6,7 @@ import pulp
 
 from backend.solvers.base import BaseSolver
 from backend.schemas.unified import UnifiedSolveRequest, UnifiedSolveResponse
-
-PULP_STATUS_LABELS: dict[str, str] = {
-    "Optimal": "Óptima",
-    "Infeasible": "Infactible",
-    "Unbounded": "Ilimitada",
-    "Undefined": "No definida",
-    "Not Solved": "No resuelta",
-}
+from backend.solvers.status import PULP_STATUS_LABELS
 
 
 class TransportSolver(BaseSolver):
@@ -30,6 +23,10 @@ class TransportSolver(BaseSolver):
             raise ValueError("Se requiere al menos un destino.")
 
         for o in origins:
+            if "_" in o:
+                raise ValueError(
+                    f"El nombre de origen '{o}' no puede contener guiones bajos (_)"
+                )
             if o not in supply:
                 raise ValueError(f"Falta la oferta para el origen '{o}'")
             for d in destinations:
@@ -38,6 +35,10 @@ class TransportSolver(BaseSolver):
                     raise ValueError(f"Falta el costo para {o} → {d}")
 
         for d in destinations:
+            if "_" in d:
+                raise ValueError(
+                    f"El nombre de destino '{d}' no puede contener guiones bajos (_)"
+                )
             if d not in demand:
                 raise ValueError(f"Falta la demanda para el destino '{d}'")
 
@@ -80,7 +81,7 @@ class TransportSolver(BaseSolver):
                 f"demand_{d}",
             )
 
-        solver = pulp.PULP_CBC_CMD(msg=False)
+        solver = pulp.PULP_CBC_CMD(msg=False, timeLimit=30)
         model.solve(solver)
 
         status = pulp.LpStatus.get(model.status, "Undefined")
@@ -95,7 +96,8 @@ class TransportSolver(BaseSolver):
             for o in origins:
                 for d in destinations:
                     name = f"{o}_{d}"
-                    val = float(pulp.value(x[name]) or 0)
+                    pulp_val = pulp.value(x[name])
+                    val = float(pulp_val) if pulp_val is not None else 0.0
                     variable_results.append({
                         "name": name,
                         "origin": o,
@@ -112,13 +114,13 @@ class TransportSolver(BaseSolver):
             status_label, objective_value, balanced, total_supply, total_demand, total_shipped
         )
 
-        recommendations = self._build_recommendations(
-            status, is_optimal, balanced, variable_results
-        )
-
         routes = [
             v for v in variable_results if v["value"] > 1e-6
         ] if is_optimal else []
+
+        recommendations = self._build_recommendations(
+            status, is_optimal, balanced, routes
+        )
 
         return UnifiedSolveResponse(
             modelType="transport",
@@ -179,7 +181,7 @@ class TransportSolver(BaseSolver):
 
     @staticmethod
     def _build_recommendations(
-        status: str, is_optimal: bool, balanced: bool, variables: list[dict],
+        status: str, is_optimal: bool, balanced: bool, routes: list[dict],
     ) -> list[dict]:
         recs = []
         if not is_optimal:
@@ -192,7 +194,7 @@ class TransportSolver(BaseSolver):
 
         recs.append({
             "title": "Solución óptima encontrada",
-            "description": f"Se encontró el plan óptimo de transporte con costo mínimo.",
+            "description": "Se encontró el plan óptimo de transporte con costo mínimo.",
             "severity": "success",
         })
 
@@ -206,7 +208,6 @@ class TransportSolver(BaseSolver):
                 "severity": "warning",
             })
 
-        routes = [v for v in variables if v["value"] > 1e-6]
         if routes:
             max_route = max(routes, key=lambda v: v["value"])
             recs.append({

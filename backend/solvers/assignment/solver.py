@@ -6,14 +6,7 @@ import pulp
 
 from backend.solvers.base import BaseSolver
 from backend.schemas.unified import UnifiedSolveRequest, UnifiedSolveResponse
-
-PULP_STATUS_LABELS: dict[str, str] = {
-    "Optimal": "Óptima",
-    "Infeasible": "Infactible",
-    "Unbounded": "Ilimitada",
-    "Undefined": "No definida",
-    "Not Solved": "No resuelta",
-}
+from backend.solvers.status import PULP_STATUS_LABELS
 
 
 class AssignmentSolver(BaseSolver):
@@ -30,6 +23,17 @@ class AssignmentSolver(BaseSolver):
             raise ValueError(
                 f"El número de agentes ({len(agents)}) debe coincidir con el de tareas ({len(tasks)})."
             )
+
+        for agent in agents:
+            if "_" in agent:
+                raise ValueError(
+                    f"El nombre de agente '{agent}' no puede contener guiones bajos (_)"
+                )
+        for task in tasks:
+            if "_" in task:
+                raise ValueError(
+                    f"El nombre de tarea '{task}' no puede contener guiones bajos (_)"
+                )
 
         for agent in agents:
             for task in tasks:
@@ -63,7 +67,7 @@ class AssignmentSolver(BaseSolver):
         for task in tasks:
             model += pulp.lpSum(x[f"{a}_{task}"] for a in agents) == 1, f"task_{task}"
 
-        solver = pulp.PULP_CBC_CMD(msg=False)
+        solver = pulp.PULP_CBC_CMD(msg=False, timeLimit=30)
         model.solve(solver)
 
         status = pulp.LpStatus.get(model.status, "Undefined")
@@ -75,11 +79,11 @@ class AssignmentSolver(BaseSolver):
 
         if is_optimal:
             objective_value = float(pulp.value(model.objective))
-            assignments = []
             for agent in agents:
                 for task in tasks:
                     name = f"{agent}_{task}"
-                    val = float(pulp.value(x[name]) or 0)
+                    pulp_val = pulp.value(x[name])
+                    val = float(pulp_val) if pulp_val is not None else 0.0
                     variable_results.append({
                         "name": name,
                         "agent": agent,
@@ -87,8 +91,6 @@ class AssignmentSolver(BaseSolver):
                         "value": val,
                         "cost": costs.get(name, 0),
                     })
-                    if val > 0.5:
-                        assignments.append({"agent": agent, "task": task, "cost": costs.get(name, 0)})
 
         interpretation = self._build_interpretation(
             sense, status_label, objective_value, variable_results
@@ -113,6 +115,7 @@ class AssignmentSolver(BaseSolver):
                 ] if is_optimal else [],
                 "agents": agents,
                 "tasks": tasks,
+                "sense": sense,
             },
         )
 

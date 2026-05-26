@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 from typing import Any
 
 from backend.adapters.ai.build_context import build_solution_context
 from backend.services.ai.opencode_analyzer import analyze_with_opencode
+
+logger = logging.getLogger(__name__)
 
 
 async def analyze_solution(
@@ -14,9 +17,12 @@ async def analyze_solution(
 ) -> dict[str, Any] | None:
     context = build_solution_context(model_type, payload, result)
 
-    ai_result = await asyncio.to_thread(analyze_with_opencode, context)
-    if ai_result is not None:
-        return ai_result
+    try:
+        ai_result = await asyncio.to_thread(analyze_with_opencode, context)
+        if ai_result is not None:
+            return ai_result
+    except Exception:
+        logger.exception("Error in AI analysis thread")
 
     return _fallback_analysis(result)
 

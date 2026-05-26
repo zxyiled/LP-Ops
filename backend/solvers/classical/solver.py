@@ -12,14 +12,13 @@ from backend.schemas.unified import UnifiedSolveRequest, UnifiedSolveResponse
 
 
 class ClassicalSolver(BaseSolver):
-    def validate(self, payload: dict[str, Any]) -> None:
-        LinearProblemRequest(**payload)
+    def validate(self, payload: dict[str, Any]) -> LinearProblemRequest:
+        return LinearProblemRequest(**payload)
 
     def solve(self, request: UnifiedSolveRequest) -> UnifiedSolveResponse:
         payload = request.payload
-        self.validate(payload)
+        problem = self.validate(payload)
 
-        problem = LinearProblemRequest(**payload)
         service = SolverService()
         result = service.solve(problem)
 
@@ -38,5 +37,6 @@ class ClassicalSolver(BaseSolver):
                 "binding_constraints": [
                     c.name for c in result.constraints if c.is_binding
                 ],
+                "sense": problem.objective.sense,
             },
         )

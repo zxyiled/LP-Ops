@@ -1,5 +1,9 @@
+import logging
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
+logging.basicConfig(level=logging.INFO, format="%(levelname)s\t%(name)s:%(lineno)d\t%(message)s")
 
 from backend.routers.solver import router as solver_router
 from backend.routers.solve import router as unified_router

@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Dict
-
 from backend.solvers.base import BaseSolver
 from backend.solvers.classical.solver import ClassicalSolver
 from backend.solvers.assignment.solver import AssignmentSolver
