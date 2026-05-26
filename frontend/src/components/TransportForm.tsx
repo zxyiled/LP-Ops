@@ -8,13 +8,17 @@ interface TransportFormProps {
 }
 
 const EXAMPLE: TransportPayload = {
-  title: 'Distribución de productos a tiendas',
-  context: 'Dos fábricas deben enviar productos a dos tiendas. Cada fábrica tiene una capacidad de producción limitada y cada tienda tiene una demanda específica. Se busca minimizar el costo total de transporte.',
-  origins: ['Fabrica1', 'Fabrica2'],
-  destinations: ['TiendaA', 'TiendaB'],
-  costs: { Fabrica1_TiendaA: 10, Fabrica1_TiendaB: 12, Fabrica2_TiendaA: 8, Fabrica2_TiendaB: 15 },
-  supply: { Fabrica1: 100, Fabrica2: 150 },
-  demand: { TiendaA: 80, TiendaB: 170 },
+  title: 'Distribución regional desde almacenes',
+  context: 'Tres almacenes regionales deben distribuir productos a cuatro centros de distribución. Cada almacén tiene una capacidad limitada y cada centro requiere una cantidad específica. La oferta total supera la demanda total, por lo que el sistema agregará un destino ficticio. Se busca minimizar el costo total de transporte.',
+  origins: ['AlmacenNorte', 'AlmacenCentro', 'AlmacenSur'],
+  destinations: ['CDMX', 'Guadalajara', 'Monterrey', 'Puebla'],
+  costs: {
+    AlmacenNorte_CDMX: 12, AlmacenNorte_Guadalajara: 18, AlmacenNorte_Monterrey: 25, AlmacenNorte_Puebla: 20,
+    AlmacenCentro_CDMX: 22, AlmacenCentro_Guadalajara: 14, AlmacenCentro_Monterrey: 19, AlmacenCentro_Puebla: 24,
+    AlmacenSur_CDMX: 17, AlmacenSur_Guadalajara: 23, AlmacenSur_Monterrey: 13, AlmacenSur_Puebla: 18,
+  },
+  supply: { AlmacenNorte: 200, AlmacenCentro: 150, AlmacenSur: 180 },
+  demand: { CDMX: 120, Guadalajara: 100, Monterrey: 140, Puebla: 90 },
 };
 
 export function TransportForm({ onSubmit, onBack, disabled }: TransportFormProps) {

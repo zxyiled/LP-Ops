@@ -29,17 +29,19 @@ const defaultCoefs = (vars: VarRow[]) =>
   Object.fromEntries(vars.map((v) => [v.name, '']));
 
 const EXAMPLE: ClassicalPayload = {
-  title: 'Ejemplo de producción',
+  title: 'Planificación de producción multiproducto',
   context:
-    'Una fábrica produce dos productos (x1, x2). Cada producto requiere horas de máquina y materiales. Se busca maximizar la ganancia total dados los recursos limitados.',
+    'Una empresa fabrica tres productos (x1, x2, x3). x1 requiere 2h de mecanizado y 1h de ensamblaje. x2 requiere 1h de mecanizado y 3h de ensamblaje. x3 requiere 3h de mecanizado y 2h de ensamblaje, más 1 unidad de un material especial con disponibilidad limitada. Los productos x2 y x3 deben fabricarse en cantidades enteras. Se busca maximizar la ganancia total.',
   variables: [
     { name: 'x1', lowerBound: 0, upperBound: null, category: 'continuous' },
-    { name: 'x2', lowerBound: 0, upperBound: null, category: 'continuous' },
+    { name: 'x2', lowerBound: 0, upperBound: null, category: 'integer' },
+    { name: 'x3', lowerBound: 0, upperBound: null, category: 'integer' },
   ],
-  objective: { sense: 'maximize', coefficients: { x1: 3, x2: 2 } },
+  objective: { sense: 'maximize', coefficients: { x1: 5, x2: 4, x3: 6 } },
   constraints: [
-    { name: 'materiales', coefficients: { x1: 1, x2: 1 }, operator: '<=', rhs: 100 },
-    { name: 'maquina', coefficients: { x1: 2, x2: 1 }, operator: '<=', rhs: 150 },
+    { name: 'mecanizado', coefficients: { x1: 2, x2: 1, x3: 3 }, operator: '<=', rhs: 200 },
+    { name: 'ensamblaje', coefficients: { x1: 1, x2: 3, x3: 2 }, operator: '<=', rhs: 180 },
+    { name: 'material_especial', coefficients: { x1: 0, x2: 0, x3: 1 }, operator: '<=', rhs: 40 },
   ],
 };
 

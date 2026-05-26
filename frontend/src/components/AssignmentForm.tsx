@@ -8,11 +8,17 @@ interface AssignmentFormProps {
 }
 
 const EXAMPLE: AssignmentPayload = {
-  title: 'Asignación de operarios a puestos',
-  context: 'Tres operarios deben ser asignados a tres puestos de trabajo. Cada operario tiene un costo distinto según el puesto. Se busca minimizar el costo total de asignación.',
-  agents: ['Operario1', 'Operario2', 'Operario3'],
-  tasks: ['TareaA', 'TareaB', 'TareaC'],
-  costs: { Operario1_TareaA: 10, Operario1_TareaB: 15, Operario1_TareaC: 12, Operario2_TareaA: 9, Operario2_TareaB: 11, Operario2_TareaC: 14, Operario3_TareaA: 13, Operario3_TareaB: 10, Operario3_TareaC: 11 },
+  title: 'Asignación de consultores a proyectos',
+  context: 'Cinco consultores deben ser asignados a cinco proyectos especializados. Cada consultor tiene una experiencia distinta en cada área, lo que genera costos diferentes. Se busca minimizar el costo total de la asignación consultor-proyecto.',
+  agents: ['ConsultorA', 'ConsultorB', 'ConsultorC', 'ConsultorD', 'ConsultorE'],
+  tasks: ['Proyecto1', 'Proyecto2', 'Proyecto3', 'Proyecto4', 'Proyecto5'],
+  costs: {
+    ConsultorA_Proyecto1: 12, ConsultorA_Proyecto2: 18, ConsultorA_Proyecto3: 25, ConsultorA_Proyecto4: 20, ConsultorA_Proyecto5: 15,
+    ConsultorB_Proyecto1: 22, ConsultorB_Proyecto2: 14, ConsultorB_Proyecto3: 19, ConsultorB_Proyecto4: 24, ConsultorB_Proyecto5: 21,
+    ConsultorC_Proyecto1: 17, ConsultorC_Proyecto2: 23, ConsultorC_Proyecto3: 13, ConsultorC_Proyecto4: 18, ConsultorC_Proyecto5: 26,
+    ConsultorD_Proyecto1: 28, ConsultorD_Proyecto2: 16, ConsultorD_Proyecto3: 21, ConsultorD_Proyecto4: 15, ConsultorD_Proyecto5: 20,
+    ConsultorE_Proyecto1: 19, ConsultorE_Proyecto2: 25, ConsultorE_Proyecto3: 22, ConsultorE_Proyecto4: 17, ConsultorE_Proyecto5: 14,
+  },
   sense: 'minimize',
 };
 
