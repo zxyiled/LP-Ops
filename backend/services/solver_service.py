@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Dict, cast
+from typing import cast
 
 import pulp
 
@@ -11,15 +11,7 @@ from backend.schemas.problem import (
     VariableResult,
 )
 from backend.services.recommendations import build_recommendations
-
-# PuLP status to Spanish labels for the UI
-PULP_STATUS_LABELS: Dict[str, str] = {
-    "Optimal": "Óptima",
-    "Infeasible": "Infactible",
-    "Unbounded": "Ilimitada",
-    "Undefined": "No definida",
-    "Not Solved": "No resuelta",
-}
+from backend.solvers.status import PULP_STATUS_LABELS
 
 
 class SolverService:
@@ -71,7 +63,7 @@ class SolverService:
                 model += expression == constraint.rhs, constraint.name
 
         # 5. Solve with the CBC solver (no console output)
-        solver = pulp.PULP_CBC_CMD(msg=False)
+        solver = pulp.PULP_CBC_CMD(msg=False, timeLimit=30)
         model.solve(solver)
 
         # 6. Interpret the solution status
@@ -128,7 +120,8 @@ class SolverService:
     ) -> list[VariableResult]:
         results = []
         for variable in request.variables:
-            value = float(pulp.value(pulp_variables[variable.name]) or 0.0)
+            val = pulp.value(pulp_variables[variable.name])
+            value = float(val) if val is not None else 0.0
             coefficient = float(request.objective.coefficients.get(variable.name, 0.0))
             results.append(
                 VariableResult(
@@ -146,10 +139,11 @@ class SolverService:
         request: LinearProblemRequest, model: pulp.LpProblem
     ) -> list[ConstraintResult]:
         results = []
+        var_values = {name: var.value() for name, var in model.variablesDict().items()}
         for constraint in request.constraints:
             activity = sum(
                 constraint.coefficients.get(variable.name, 0.0)
-                * float(model.variablesDict()[variable.name].value() or 0.0)
+                * float(var_values.get(variable.name) or 0.0)
                 for variable in request.variables
             )
 
