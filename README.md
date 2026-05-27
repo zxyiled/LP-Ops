@@ -135,7 +135,7 @@ Formulario específico → completa datos → "Resolver"
 
 - Python 3.12+
 - Node.js 22+
-- npm 10+
+- pnpm 10+
 
 ### Backend
 
@@ -150,8 +150,8 @@ Documentación interactiva en `http://localhost:8000/docs`
 
 ```bash
 cd frontend
-npm install
-npm run dev
+pnpm install
+pnpm run dev
 ```
 
 Abrir `http://localhost:5173` en el navegador.
@@ -171,11 +171,11 @@ Si opencode no está instalado, el sistema usa el fallback determinístico.
 ### Scripts disponibles (frontend)
 
 | Comando | Descripción |
-|---|---|
-| `npm run dev` | Servidor de desarrollo |
-| `npm run build` | Type-check + build producción |
-| `npm run lint` | ESLint |
-| `npm run preview` | Preview del build de producción |
+|---|---|---|
+| `pnpm run dev` | Servidor de desarrollo |
+| `pnpm run build` | Type-check + build producción |
+| `pnpm run lint` | ESLint |
+| `pnpm run preview` | Preview del build de producción |
 
 ---
 
