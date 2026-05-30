@@ -1,5 +1,22 @@
 # LP-Ops · Linear Programming Optimization Solver
 
+<p align="center">
+  <img src="https://img.shields.io/badge/Python-3.12%2B-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python 3.12+"/>
+  <img src="https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI"/>
+  <img src="https://img.shields.io/badge/Pydantic-E92063?style=for-the-badge&logo=pydantic&logoColor=white" alt="Pydantic"/>
+  <img src="https://img.shields.io/badge/PuLP-003B57?style=for-the-badge&logo=python&logoColor=white" alt="PuLP"/>
+  <img src="https://img.shields.io/badge/Uvicorn-000?style=for-the-badge&logo=uvicorn&logoColor=white" alt="Uvicorn"/>
+  <img src="https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=white" alt="React 19"/>
+  <img src="https://img.shields.io/badge/TypeScript-6-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript 6"/>
+  <img src="https://img.shields.io/badge/Vite-8-646CFF?style=for-the-badge&logo=vite&logoColor=white" alt="Vite 8"/>
+  <img src="https://img.shields.io/badge/CSS_Modules-000?style=for-the-badge&logo=cssmodules&logoColor=white" alt="CSS Modules"/>
+  <img src="https://img.shields.io/badge/ESLint-4B32C3?style=for-the-badge&logo=eslint&logoColor=white" alt="ESLint"/>
+  <img src="https://img.shields.io/badge/pnpm-F69220?style=for-the-badge&logo=pnpm&logoColor=white" alt="pnpm"/>
+  <img src="https://img.shields.io/badge/Node.js-22-339933?style=for-the-badge&logo=nodedotjs&logoColor=white" alt="Node.js 22"/>
+  <img src="https://img.shields.io/badge/opencode-000?style=for-the-badge&logo=openai&logoColor=white" alt="opencode"/>
+  <img src="https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge&logo=opensourceinitiative&logoColor=white" alt="MIT License"/>
+</p>
+
 Aplicación web interactiva para resolver problemas de **Programación Lineal**, **Asignación** y **Transporte**. Desarrollada como Proyecto Integrador (PIA) para la unidad de aprendizaje de Investigación de Operaciones.
 
 ---
